@@ -8,11 +8,23 @@
 
 import UIKit
 import Alamofire
+import CoreLocation
 
-class ViewController: UIViewController, FBSDKLoginButtonDelegate {
+class ViewController: UIViewController, FBSDKLoginButtonDelegate, CLLocationManagerDelegate {
+    let locationManager = CLLocationManager()
 
     override func viewDidLoad() {
+        FBSDKAccessToken.setCurrentAccessToken(nil)
         super.viewDidLoad()
+        locationManager.delegate = self
+        locationManager.requestAlwaysAuthorization()
+        let identifier = "F7826DA6-4FA2-4E98-8024-BC5B71E0893E"
+        let proximityUUID = NSUUID.init(UUIDString: "F7826DA6-4FA2-4E98-8024-BC5B71E0893E");
+        let beaconRegion = CLBeaconRegion.init(proximityUUID: proximityUUID!, identifier: identifier)
+        locationManager.startMonitoringForRegion(beaconRegion)
+        locationManager.startRangingBeaconsInRegion(beaconRegion)
+        
+        
         if (FBSDKAccessToken.currentAccessToken() != nil) {
             self.userData()
             // User is already logged in, do work such as go to next view controller.
@@ -26,6 +38,19 @@ class ViewController: UIViewController, FBSDKLoginButtonDelegate {
             loginView.delegate = self
         }
         // Do any additional setup after loading the view, typically from a nib.
+    }
+    func locationManager(manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], inRegion region: CLBeaconRegion) {
+        
+        for beacon in beacons {
+            print(beacon)
+        }
+    }
+    func locationManager(manager: CLLocationManager, monitoringDidFailForRegion region: CLRegion?, withError error: NSError) {
+        print("Failed monitoring region: \(error.description)")
+    }
+    
+    func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
+        print("Location manager failed: \(error.description)")
     }
 
     override func didReceiveMemoryWarning() {
@@ -54,6 +79,10 @@ class ViewController: UIViewController, FBSDKLoginButtonDelegate {
     func loginButtonDidLogOut(loginButton: FBSDKLoginButton!) {
         print("User Logged Out")
     }
+    @IBAction func monitorBeacon(sender: UIButton) {
+        
+        print("xx")
+    }
     func userData(){
         let params = ["fields": "email, picture, first_name, last_name, id"]
         let graphRequest : FBSDKGraphRequest = FBSDKGraphRequest(graphPath: "me", parameters: params)
@@ -70,7 +99,8 @@ class ViewController: UIViewController, FBSDKLoginButtonDelegate {
                 let facebookId : NSString = result.valueForKey("id") as! NSString
                 let email : NSString = result.valueForKey("email") as! NSString
                 
-                let url = NSURL(string: "http://localhost:8080/rest/v1/account/facebook-login");
+                let url = NSURL(string: "http://localhost:8080/rest/v1/account/facebook-signup");
+               
                 let request = NSMutableURLRequest(URL: url!)
                 request.HTTPMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -98,4 +128,5 @@ class ViewController: UIViewController, FBSDKLoginButtonDelegate {
 
 
 }
+
 
